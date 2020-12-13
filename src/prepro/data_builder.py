@@ -227,12 +227,11 @@ def full_selection(doc_sent_list, abstract_sent_list, summary_size=3):
     doc_sent_list_merged = [_rouge_clean(' '.join(sent)) for sent in doc_sent_list]
     src_len = len(doc_sent_list_merged)
 
-    # 일단 greedy로 구한 다음 3개가 안되는 경우만 나머지를 full로 채움!
+    # 일단 greedy한 방식으로 rouge score를 높일 수 있는 문장 구하기
     selected_idx3_list = greedy_selection(doc_sent_list, abstract_sent_list, summary_size)
-    # print('1 ', selected_idx3_list)
-    # if len(selected_idx3_list) == 3:
-    #     return selected_idx3_list
 
+    # 만약 선택한 문장 수가 3개가 안되는 경우 
+    # 나머지 문장 중 rouge 점수를 최대화 하는 문장을 찾아 문장 수를 3개 고름
     total_max_rouge_score = 0.0
     if src_len > 10 or (src_len <= 10 and len(selected_idx3_list) < 2): # greedy
         for i in range(summary_size - len(selected_idx3_list)):
@@ -264,7 +263,7 @@ def full_selection(doc_sent_list, abstract_sent_list, summary_size=3):
             total_max_rouge_score = cur_max_total_rouge_score
     # print('2 ', selected_idx3_list)      
             
-    # full
+    # 선택한 3개 문장의 모든 조합(permutaion)에 대해서 rouge score를 최대로 하는 조합을 구함
     sents_idx_perm_list = list(permutations(range(src_len), summary_size)) 
     sents_idx_list = []
     for sents_idx_perm in sents_idx_perm_list:
@@ -442,114 +441,3 @@ def _format_to_bert(params):
     torch.save(datasets, save_file)
     datasets = []
     gc.collect()
-
-
-def format_to_lines(args):
-    corpus_mapping = {}
-    for corpus_type in ['valid', 'test', 'train']:
-        temp = []
-        for line in open(pjoin(args.map_path, 'mapping_' + corpus_type + '.txt')):
-            temp.append(hashhex(line.strip()))
-        corpus_mapping[corpus_type] = {key.strip(): 1 for key in temp}
-    train_files, valid_files, test_files = [], [], []
-    for f in glob.glob(pjoin(args.raw_path, '*.json')):
-        real_name = f.split('/')[-1].split('.')[0]
-        if (real_name in corpus_mapping['valid']):
-            valid_files.append(f)
-        elif (real_name in corpus_mapping['test']):
-            test_files.append(f)
-        elif (real_name in corpus_mapping['train']):
-            train_files.append(f)
-        # else:
-        #     train_files.append(f)
-
-    corpora = {'train': train_files, 'valid': valid_files, 'test': test_files}
-    for corpus_type in ['train', 'valid', 'test']:
-        a_lst = [(f, args) for f in corpora[corpus_type]]
-        pool = Pool(args.n_cpus)
-        dataset = []
-        p_ct = 0
-        for d in pool.imap_unordered(_format_to_lines, a_lst):
-            dataset.append(d)
-            if (len(dataset) > args.shard_size):
-                pt_file = "{:s}.{:s}.{:d}.json".format(args.save_path, corpus_type, p_ct)
-                with open(pt_file, 'w') as save:
-                    # save.write('\n'.join(dataset))
-                    save.write(json.dumps(dataset))
-                    p_ct += 1
-                    dataset = []
-
-        pool.close()
-        pool.join()
-        if (len(dataset) > 0):
-            pt_file = "{:s}.{:s}.{:d}.json".format(args.save_path, corpus_type, p_ct)
-            with open(pt_file, 'w') as save:
-                # save.write('\n'.join(dataset))
-                save.write(json.dumps(dataset))
-                p_ct += 1
-                dataset = []
-
-
-def _format_to_lines(params):
-    f, args = params
-    print(f)
-    source, tgt = load_json(f, args.lower)
-    return {'src': source, 'tgt': tgt}
-
-
-
-
-def format_xsum_to_lines(args):
-    if (args.dataset != ''):
-        datasets = [args.dataset]
-    else:
-        datasets = ['train', 'test', 'valid']
-
-    corpus_mapping = json.load(open(pjoin(args.raw_path, 'XSum-TRAINING-DEV-TEST-SPLIT-90-5-5.json')))
-
-    for corpus_type in datasets:
-        mapped_fnames = corpus_mapping[corpus_type]
-        root_src = pjoin(args.raw_path, 'restbody')
-        root_tgt = pjoin(args.raw_path, 'firstsentence')
-        # realnames = [fname.split('.')[0] for fname in os.listdir(root_src)]
-        realnames = mapped_fnames
-
-        a_lst = [(root_src, root_tgt, n) for n in realnames]
-        pool = Pool(args.n_cpus)
-        dataset = []
-        p_ct = 0
-        for d in pool.imap_unordered(_format_xsum_to_lines, a_lst):
-            if (d is None):
-                continue
-            dataset.append(d)
-            if (len(dataset) > args.shard_size):
-                pt_file = "{:s}.{:s}.{:d}.json".format(args.save_path, corpus_type, p_ct)
-                with open(pt_file, 'w') as save:
-                    save.write(json.dumps(dataset))
-                    p_ct += 1
-                    dataset = []
-
-        pool.close()
-        pool.join()
-        if (len(dataset) > 0):
-            pt_file = "{:s}.{:s}.{:d}.json".format(args.save_path, corpus_type, p_ct)
-            with open(pt_file, 'w') as save:
-                save.write(json.dumps(dataset))
-                p_ct += 1
-                dataset = []
-
-
-def _format_xsum_to_lines(params):
-    src_path, root_tgt, name = params
-    f_src = pjoin(src_path, name + '.restbody')
-    f_tgt = pjoin(root_tgt, name + '.fs')
-    if (os.path.exists(f_src) and os.path.exists(f_tgt)):
-        print(name)
-        source = []
-        for sent in open(f_src):
-            source.append(sent.split())
-        tgt = []
-        for sent in open(f_tgt):
-            tgt.append(sent.split())
-        return {'src': source, 'tgt': tgt}
-    return None
