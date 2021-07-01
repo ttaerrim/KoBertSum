@@ -74,7 +74,7 @@ BertSum은 BERT 위에 inter-sentence Transformer 2-layers 를 얹은 구조를 
 
    -  데이터셋이 `.jsonl`인 경우
     ```
-    python data_prepro.py mode=jsonl_to_bert \
+    python make_data.py mode=jsonl_to_bert \
       dataset_name=DATASET_NAME src_name=SRC_NAME tgt_name=SUMMARY_NAME tgt_type=idx_list  \
       train_split_frac=0.95 \
       n_cpus=3
@@ -82,7 +82,7 @@ BertSum은 BERT 위에 inter-sentence Transformer 2-layers 를 얹은 구조를 
 
    - 데이터셋이 `.pickle`로 저장한 dataframe인 경우
     ```
-    python data_prepro.py mode=df_to_bert \
+    python make_data.py mode=df_to_bert \
       dataset_name=DATASET_NAME src_name=SRC_NAME tgt_name=SUMMARY_NAME tgt_type=idx_list \
       train_split_frac=0.95 \
       n_cpus=3
@@ -90,7 +90,7 @@ BertSum은 BERT 위에 inter-sentence Transformer 2-layers 를 얹은 구조를 
 
   - 한국어 문서 추출요약 AI 경진대회에서 제공된 [Bflysoft-뉴스기사 데이터셋](https://dacon.io/competitions/official/235671/data/)을 사용할 경우
      - 해당 `.jsonl`파일을 다운받아 `datasets/bflysoft_ko` 폴더에 넣어준 후
-     - `python data_prepro.py mode=jsonl_to_bert dataset=bflysoft_ko`를 실행해주면 간편하게 변환할 수 있습니다.
+     - `python make_data.py mode=jsonl_to_bert dataset=bflysoft_ko`를 실행해주면 간편하게 변환할 수 있습니다.
    
   
 ### Fine-tuning and Inference

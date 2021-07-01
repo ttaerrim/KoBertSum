@@ -1,4 +1,4 @@
-dataset_name:  bflysoft_ko
+dataset_name: bflysoft_ko
 src_name: article_original
 tgt_name: abstractive
 tgt_type: str_list
