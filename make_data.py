@@ -90,7 +90,6 @@ def _jsonl_to_df(
 
 
 def df_to_bert(cfg):
-    model_name = cfg.model_name
     from_dir, temp_dir, to_dir = cfg.dirs.df, cfg.dirs.json, cfg.dirs.bert
     log_file = cfg.dirs.log_file
     src_name, tgt_name, tgt_type, train_split_frac = (
@@ -123,7 +122,6 @@ def df_to_bert(cfg):
         os.system(
             f"python {os.path.join(hydra.utils.get_original_cwd(), 'src', 'preprocess.py')}"
             + f" -mode format_to_bert -dataset {subdata_group}"
-            + f" -model_name {model_name}"
             + f" -tgt_type {tgt_type}"
             + f" -raw_path {os.path.join(base_path, temp_dir)}"
             + f" -save_path {os.path.join(base_path, to_dir, subdata_group)}"
@@ -144,7 +142,10 @@ def df_to_bert(cfg):
             train_df = df.sample(
                 frac=train_split_frac, random_state=42
             )  # random state is a seed value
-            valid_df = df.drop(train_df.index)
+
+            train_df = train_df[:5000]  ## 임시!!
+
+            valid_df = df.drop(train_df.index)[:500]
             train_df.reset_index(inplace=True, drop=True)
             valid_df.reset_index(inplace=True, drop=True)
 

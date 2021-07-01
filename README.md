@@ -108,7 +108,7 @@ BertSum은 BERT 위에 inter-sentence Transformer 2-layers 를 얹은 구조를 
       예) (GPU 3개를 이용할 경우): `0,1,2`
 
     ```
-    python main.py -mode train -target_summary_sent abs -visible_gpus 0
+    python main.py -mode train -visible_gpus 0
     ```
 
     결과는  `models` 폴더 내 finetuning이 실행된 시간을 폴더명으로 가진 폴더에 저장됩니다. 

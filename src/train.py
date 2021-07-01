@@ -58,11 +58,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "-use_interval", type=str2bool, nargs="?", const=True, default=True
     )
-    parser.add_argument(
-        "-model_name",
-        type=str,
-        default="",
-    )
     parser.add_argument("-load_from_extractive", default="", type=str)
 
     parser.add_argument(

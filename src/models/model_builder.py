@@ -133,22 +133,13 @@ def get_generator(vocab_size, dec_hidden_size, device):
 
 
 class Bert(nn.Module):
-    def __init__(self, model_name, temp_dir, finetune=False):
+    def __init__(self, temp_dir, finetune=False):
         super(Bert, self).__init__()
         # if(large):
         #     self.model = BertModel.from_pretrained('bert-large-uncased', cache_dir=temp_dir)
         # else:
-        print(model_name)
-        if model_name == "monologg/kobert-lm":
-            self.model = BertModel.from_pretrained(model_name, cache_dir=temp_dir)
-        elif model_name == "kykim/bert-kor-base":
-            self.model = BertModel.from_pretrained(model_name, cache_dir=temp_dir)
-        elif model_name == "kykim/albert-kor-base":
-            self.model = AlbertModel.from_pretrained(model_name, cache_dir=temp_dir)
-        elif model_name == "kykim/electra-kor-base":
-            self.model = ElectraModel.from_pretrained(model_name, cache_dir=temp_dir)
-        else:
-            print("False model name!!")
+
+        self.model = BertModel.from_pretrained(cache_dir=temp_dir)
 
         self.finetune = finetune
 
@@ -169,7 +160,7 @@ class ExtSummarizer(nn.Module):
         super(ExtSummarizer, self).__init__()
         self.args = args
         self.device = device
-        self.bert = Bert(args.model_name, args.temp_dir, args.finetune_bert)
+        self.bert = Bert(args.temp_dir, args.finetune_bert)
 
         self.ext_layer = ExtTransformerEncoder(
             self.bert.model.config.hidden_size,
@@ -231,7 +222,7 @@ class AbsSummarizer(nn.Module):
         super(AbsSummarizer, self).__init__()
         self.args = args
         self.device = device
-        self.bert = Bert(args.model_name, args.temp_dir, args.finetune_bert)
+        self.bert = Bert(args.temp_dir, args.finetune_bert)
 
         if bert_from_extractive is not None:
             self.bert.model.load_state_dict(

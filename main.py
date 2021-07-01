@@ -35,12 +35,6 @@ if __name__ == "__main__":
         choices=["install", "make_data", "train", "valid", "test"],
     )
 
-    parser.add_argument(
-        "-model_name",
-        default="kykim/bert-kor-base",
-        type=str,
-        choices=["monologg/kobert-lm", "kykim/bert-kor-base", "kykim/electra-kor-base"],
-    )
     parser.add_argument("-n_cpus", default="2", type=str)
     parser.add_argument("-visible_gpus", default="0", type=str)
 
@@ -84,7 +78,6 @@ if __name__ == "__main__":
 
         do_str = (
             f"python train.py -task ext -mode train"
-            + f" -model_name {args.model_name}"
             + f" -model_path {MODEL_DIR} -bert_data_path {BERT_DATA_DIR}"
             + f" -visible_gpus {args.visible_gpus}"
         )
