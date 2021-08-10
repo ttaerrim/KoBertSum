@@ -2,3 +2,6 @@
 __pycache__
 tutorials/.ipynb_checkpoints/
 # temp/
+bertenv/
+
+Miniconda3-latest-MacOSX-x86_64.sh

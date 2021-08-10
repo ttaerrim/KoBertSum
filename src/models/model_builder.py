@@ -133,6 +133,47 @@ class Bert(nn.Module):
                 top_vec, _ = self.model(x, token_type_ids=segs, attention_mask=mask)
         return top_vec
 
+class Summarizer(nn.Module):
+    def __init__(self, args, device, load_pretrained_bert = False, bert_config = None):
+        super(Summarizer, self).__init__()
+        self.args = args
+        self.device = device
+        self.bert = Bert(args, load_pretrained_bert = True, bert_config=BertConfig.from_json_file(args.bert_config_path))
+        self.bert_config = BertConfig.from_json_file(args.bert_config_path)
+        if (args.encoder == 'classifier'):
+            self.encoder = Classifier(self.bert_config.hidden_size)
+        # elif(args.encoder=='transformer'):
+        #     self.encoder = TransformerInterEncoder(self.bert_config.hidden_size, args.ff_size, args.heads,
+        #                                            args.dropout, args.inter_layers)
+        # elif(args.encoder=='rnn'):
+        #     self.encoder = RNNEncoder(bidirectional=True, num_layers=1,
+        #                               input_size=self.bert_config.hidden_size, hidden_size=args.rnn_size,
+        #                               dropout=args.dropout)
+        elif (args.encoder == 'baseline'):
+            bert_config = BertConfig(self.bert_config.vocab_size, hidden_size=args.hidden_size,
+                                     num_hidden_layers=6, num_attention_heads=8, intermediate_size=args.ff_size)
+            self.bert.model = BertModel(bert_config)
+            self.encoder = Classifier(self.bert_config.hidden_size)
+
+        if args.param_init != 0.0:
+            for p in self.encoder.parameters():
+                p.data.uniform_(-args.param_init, args.param_init)
+        if args.param_init_glorot:
+            for p in self.encoder.parameters():
+                if p.dim() > 1:
+                    xavier_uniform_(p)
+
+        self.to(device)
+    def load_cp(self, pt):
+        self.load_state_dict(pt['model'], strict=True)
+
+    def forward(self, x, segs, clss, mask, mask_cls, sentence_range=None):
+
+        top_vec = self.bert(x, segs, mask)
+        sents_vec = top_vec[torch.arange(top_vec.size(0)).unsqueeze(1), clss]
+        sents_vec = sents_vec * mask_cls[:, :, None].float()
+        sent_scores = self.encoder(sents_vec, mask_cls).squeeze(-1)
+        return sent_scores, mask_cls
 
 class ExtSummarizer(nn.Module):
     def __init__(self, args, device, checkpoint):
